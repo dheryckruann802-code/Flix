@@ -1,0 +1,44 @@
+@import url('https://fonts.googleapis.com/css2?family=Outfit:wght@300;400;600;800;900&display=swap');
+@import "tailwindcss";
+
+@theme {
+  --font-sans: "Outfit", ui-sans-serif, system-ui, sans-serif;
+  
+  --color-brand-red: #E50914;
+  --color-app-black: #050505;
+  --color-netflix-black: #050505;
+}
+
+@layer base {
+  body {
+    @apply bg-app-black text-[#F5F5F5] antialiased selection:bg-brand-red/30 font-sans;
+    overflow-x: hidden;
+  }
+}
+
+@layer components {
+  .bold-header {
+    @apply font-black tracking-tighter uppercase leading-[0.85];
+  }
+  
+  .meta-text {
+    @apply text-[10px] uppercase tracking-[0.2em] font-semibold text-white/40;
+  }
+
+  .glass-surface {
+    @apply bg-white/5 backdrop-blur-xl border border-white/10;
+  }
+  
+  .cinematic-gradient {
+    background: radial-gradient(circle at 0% 0%, #E5091410 0%, transparent 50%),
+                linear-gradient(to bottom, transparent, #050505);
+  }
+
+  .hide-scrollbar::-webkit-scrollbar {
+    display: none;
+  }
+  .hide-scrollbar {
+    -ms-overflow-style: none;
+    scrollbar-width: none;
+  }
+}
