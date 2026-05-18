@@ -14,7 +14,8 @@ import {
   Video, 
   TrendingUp,
   LayoutGrid,
-  Edit2
+  Edit2,
+  Youtube
 } from 'lucide-react';
 import { UserProfile as UserProfileType } from '../types';
 
@@ -25,31 +26,42 @@ interface UserProfileProps {
 }
 
 export default function UserProfile({ profile, onLogin, onLogout }: UserProfileProps) {
+  const [isEditing, setIsEditing] = React.useState(false);
+  const [editName, setEditName] = React.useState(profile?.username || '');
+  const [editBio, setEditBio] = React.useState(profile?.bio || '');
+  const [editAvatarUrl, setEditAvatarUrl] = React.useState(profile?.avatarUrl || '');
+  const [editYoutubeUrl, setEditYoutubeUrl] = React.useState(profile?.youtubeLink || '');
+
   if (!profile) {
     return (
       <div className="w-full max-w-lg mx-auto py-32 px-6 flex flex-col items-center text-center">
-        <div className="w-24 h-24 bg-white/5 rounded-[32px] border border-white/10 flex items-center justify-center mb-8">
+        <div className="w-24 h-24 bg-white/5 rounded-[32px] border border-white/10 flex items-center justify-center mb-8 animate-pulse">
            <Users className="w-10 h-10 text-brand-red opacity-40" />
         </div>
-        <h2 className="text-4xl font-black italic tracking-tighter uppercase mb-4">Join the <span className="text-brand-red">Flix</span> Hub</h2>
+        <h2 className="text-4xl font-black italic tracking-tighter uppercase mb-4">Initializing <span className="text-brand-red">Flix</span> Hub</h2>
         <p className="text-white/40 mb-12 text-sm leading-relaxed">
-          Log in with Google to manage your SocialFlix videos, track earnings, and engage with the community.
+          Setting up your local cinematic profile...
         </p>
-        <button 
-          onClick={onLogin}
-          className="w-full bg-white text-black font-black py-4 rounded-2xl flex items-center justify-center gap-4 hover:bg-brand-red hover:text-white transition-all transform active:scale-95 group shadow-2xl shadow-white/5"
-        >
-          <svg className="w-5 h-5 group-hover:fill-white transition-colors" viewBox="0 0 24 24">
-            <path d="M22.56 12.25c0-.78-.07-1.53-.2-2.25H12v4.26h5.92c-.26 1.37-1.04 2.53-2.21 3.31v2.77h3.57c2.08-1.92 3.28-4.74 3.28-8.09z" fill="#4285F4"/>
-            <path d="M12 23c2.97 0 5.46-.98 7.28-2.66l-3.57-2.77c-.98.66-2.23 1.06-3.71 1.06-2.86 0-5.29-1.93-6.16-4.53H2.18v2.84C3.99 20.53 7.7 23 12 23z" fill="#34A853"/>
-            <path d="M5.84 14.09c-.22-.66-.35-1.36-.35-2.09s.13-1.43.35-2.09V7.07H2.18C1.43 8.55 1 10.22 1 12s.43 3.45 1.18 4.93l3.66-2.84z" fill="#FBBC05"/>
-            <path d="M12 5.38c1.62 0 3.06.56 4.21 1.63l3.15-3.15C17.45 2.09 14.97 1 12 1 7.7 1 3.99 3.47 2.18 7.07l3.66 2.84c.87-2.6 3.3-4.53 6.16-4.53z" fill="#EA4335"/>
-          </svg>
-          <span className="uppercase tracking-widest text-[10px]">Continue with Google</span>
-        </button>
       </div>
     );
   }
+
+  const handleSave = () => {
+    const updatedProfile = {
+      ...profile,
+      username: editName,
+      bio: editBio,
+      avatarUrl: editAvatarUrl,
+      youtubeLink: editYoutubeUrl
+    };
+    // We can't call a prop here to update parent state directly unless we add it, 
+    // but we can update localStorage and suggest a refresh or assume parent handles it.
+    // Better yet, let's assume the user will refresh or the parent will be updated via a callback.
+    localStorage.setItem('flix_user_profile', JSON.stringify(updatedProfile));
+    setIsEditing(false);
+    // In a real app we'd trigger a reload or parent state update
+    window.location.reload(); 
+  };
 
   return (
     <div className="w-full max-w-6xl mx-auto py-12 px-6">
@@ -62,28 +74,102 @@ export default function UserProfile({ profile, onLogin, onLogout }: UserProfileP
             <div className="w-32 h-32 md:w-40 md:h-40 rounded-3xl overflow-hidden border-2 border-white/20 group-hover:border-brand-red transition-colors">
               <img src={profile.avatarUrl} alt={profile.username} className="w-full h-full object-cover" />
             </div>
-            <button className="absolute -bottom-2 -right-2 p-2 bg-brand-red rounded-xl shadow-lg hover:scale-110 transition-transform">
-              <Edit2 className="w-4 h-4 text-white" />
-            </button>
           </div>
 
           <div className="flex-1 text-center md:text-left">
-            <h2 className="text-4xl md:text-6xl font-black tracking-tighter uppercase italic mb-2">
-              {profile.username}
-            </h2>
-            <p className="text-white/60 mb-6 max-w-md">{profile.bio}</p>
-            
-            <div className="flex flex-wrap justify-center md:justify-start gap-4">
-              <button 
-                onClick={onLogout}
-                className="px-8 py-3 bg-white text-black font-black rounded-xl hover:bg-brand-red hover:text-white transition-all uppercase text-xs tracking-widest"
-              >
-                Logout
-              </button>
-              <button className="p-3 bg-white/5 border border-white/10 rounded-xl hover:bg-white/10 transition-colors">
-                <Settings className="w-5 h-5" />
-              </button>
-            </div>
+            {isEditing ? (
+              <div className="space-y-4 mb-6">
+                <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                  <div>
+                    <label className="text-[10px] uppercase font-black tracking-widest text-white/40 mb-2 block">Username</label>
+                    <input 
+                      value={editName}
+                      onChange={(e) => setEditName(e.target.value)}
+                      className="bg-white/5 border border-white/20 rounded-xl px-4 py-2 w-full text-xl font-black uppercase tracking-tighter italic outline-none focus:border-brand-red"
+                      placeholder="Username"
+                    />
+                  </div>
+                  <div>
+                    <label className="text-[10px] uppercase font-black tracking-widest text-white/40 mb-2 block">Avatar URL</label>
+                    <input 
+                      value={editAvatarUrl}
+                      onChange={(e) => setEditAvatarUrl(e.target.value)}
+                      className="bg-white/5 border border-white/20 rounded-xl px-4 py-2 w-full text-sm outline-none focus:border-brand-red"
+                      placeholder="https://image.url"
+                    />
+                  </div>
+                </div>
+                
+                <div>
+                  <label className="text-[10px] uppercase font-black tracking-widest text-white/40 mb-2 block">YouTube Link</label>
+                  <input 
+                    value={editYoutubeUrl}
+                    onChange={(e) => setEditYoutubeUrl(e.target.value)}
+                    className="bg-white/5 border border-white/20 rounded-xl px-4 py-2 w-full text-sm outline-none focus:border-brand-red"
+                    placeholder="https://youtube.com/@channel"
+                  />
+                </div>
+
+                <div>
+                  <label className="text-[10px] uppercase font-black tracking-widest text-white/40 mb-2 block">Bio</label>
+                  <textarea 
+                    value={editBio}
+                    onChange={(e) => setEditBio(e.target.value)}
+                    className="bg-white/5 border border-white/20 rounded-xl px-4 py-2 w-full text-sm text-white/60 outline-none focus:border-brand-red resize-none"
+                    rows={2}
+                    placeholder="Bio"
+                  />
+                </div>
+                
+                <div className="flex gap-2">
+                  <button onClick={handleSave} className="px-6 py-2 bg-brand-red text-white font-black rounded-lg uppercase text-[10px]">Save Profile</button>
+                  <button onClick={() => {
+                    setIsEditing(false);
+                    setEditName(profile.username);
+                    setEditBio(profile.bio);
+                    setEditAvatarUrl(profile.avatarUrl);
+                    setEditYoutubeUrl(profile.youtubeLink || '');
+                  }} className="px-6 py-2 bg-white/10 text-white font-black rounded-lg uppercase text-[10px]">Cancel</button>
+                </div>
+              </div>
+            ) : (
+              <>
+                <h2 className="text-4xl md:text-6xl font-black tracking-tighter uppercase italic mb-2">
+                  {profile.username}
+                </h2>
+                <p className="text-white/60 mb-4 max-w-md">{profile.bio}</p>
+                
+                {profile.youtubeLink && (
+                  <a 
+                    href={profile.youtubeLink} 
+                    target="_blank" 
+                    rel="noreferrer"
+                    className="flex items-center gap-2 text-brand-red mb-6 hover:opacity-80 transition-opacity w-fit"
+                  >
+                    <Youtube className="w-5 h-5" />
+                    <span className="text-[10px] font-black uppercase tracking-widest">YouTube Channel</span>
+                  </a>
+                )}
+                
+                <div className="flex flex-wrap justify-center md:justify-start gap-4">
+                  <button 
+                    onClick={() => setIsEditing(true)}
+                    className="px-8 py-3 bg-white text-black font-black rounded-xl hover:bg-brand-red hover:text-white transition-all uppercase text-xs tracking-widest flex items-center gap-2"
+                  >
+                    <Edit2 className="w-4 h-4" /> Edit Profile
+                  </button>
+                  <button 
+                    onClick={onLogout}
+                    className="px-8 py-3 bg-white/5 border border-white/10 text-white/40 font-black rounded-xl hover:bg-white/10 transition-all uppercase text-xs tracking-widest"
+                  >
+                    Reset Profile
+                  </button>
+                  <button className="p-3 bg-white/5 border border-white/10 rounded-xl hover:bg-white/10 transition-colors">
+                    <Settings className="w-5 h-5" />
+                  </button>
+                </div>
+              </>
+            )}
           </div>
 
           {/* AI Monetization Stats */}
@@ -91,7 +177,7 @@ export default function UserProfile({ profile, onLogin, onLogout }: UserProfileP
             <StatCard 
               icon={<DollarSign className="w-4 h-4 text-yellow-500" />} 
               label="Earnings" 
-              value={`$${profile.totalEarnings.toFixed(2)}`}
+              value={`$${(profile.totalEarnings || 0).toFixed(2)}`}
               subValue="AI Monetized"
               color="border-yellow-500/20"
             />
@@ -108,8 +194,8 @@ export default function UserProfile({ profile, onLogin, onLogout }: UserProfileP
 
       {/* Stats Quick View */}
       <div className="grid grid-cols-1 md:grid-cols-3 gap-6 mb-12">
-        <MetricCard icon={<Users className="w-6 h-6" />} label="Subscribers" value={profile.subscribers.toLocaleString()} />
-        <MetricCard icon={<Eye className="w-6 h-6" />} label="Total Views" value={profile.totalViews.toLocaleString()} />
+        <MetricCard icon={<Users className="w-6 h-6" />} label="Subscribers" value={(profile.subscribers || 0).toLocaleString()} />
+        <MetricCard icon={<Eye className="w-6 h-6" />} label="Total Views" value={(profile.totalViews || 0).toLocaleString()} />
         <MetricCard icon={<Video className="w-6 h-6" />} label="Total Posts" value={profile.posts.length} />
       </div>
 
@@ -137,7 +223,7 @@ export default function UserProfile({ profile, onLogin, onLogout }: UserProfileP
             <div className="absolute bottom-4 left-4 right-4 group-hover:hidden">
               <div className="flex items-center gap-2 text-white/60 mb-1">
                 <Eye className="w-3 h-3" />
-                <span className="text-[10px] font-bold uppercase">{post.views.toLocaleString()}</span>
+                <span className="text-[10px] font-bold uppercase">{(post.views || 0).toLocaleString()}</span>
               </div>
               <p className="text-[10px] font-bold text-white uppercase tracking-tighter truncate">{post.description}</p>
             </div>

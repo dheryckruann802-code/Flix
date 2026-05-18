@@ -5,7 +5,7 @@
 
 import React, { useState, useRef, useEffect } from 'react';
 import { motion, AnimatePresence } from 'motion/react';
-import { Sparkles, Send, X, Bot, Film, Info, HelpCircle } from 'lucide-react';
+import { Send, Maximize2, HardDrive, BrainCircuit } from 'lucide-react';
 
 interface Message {
   id: string;
@@ -15,10 +15,41 @@ interface Message {
 
 export default function JudyAI() {
   const [messages, setMessages] = useState<Message[]>([
-    { id: '1', text: "Hello! I'm Judy, your AI cinematic assistant. Need a movie recommendation or help with Flix?", sender: 'judy' }
+    { id: '1', text: "Hello! I'm Judy, your AI cinematic assistant. I can now upscale your imports to 4K and sync your cloud assets for offline playback!", sender: 'judy' }
   ]);
   const [input, setInput] = useState('');
+  const [isProcessing, setIsProcessing] = useState(false);
+  const [activeTask, setActiveTask] = useState<string | null>(null);
+  const [progress, setProgress] = useState(0);
   const messagesEndRef = useRef<HTMLDivElement>(null);
+
+  const simulateTask = (taskName: string) => {
+    setActiveTask(taskName);
+    setIsProcessing(true);
+    setProgress(0);
+    
+    const interval = setInterval(() => {
+      setProgress(prev => {
+        if (prev >= 100) {
+          clearInterval(interval);
+          setIsProcessing(false);
+          setActiveTask(null);
+          setMessages(prevMsgs => [...prevMsgs, { 
+            id: Date.now().toString(), 
+            text: `✅ ${taskName} complete! Your content is now optimized.`, 
+            sender: 'judy' 
+          }]);
+          return 100;
+        }
+        return prev + 2;
+      });
+    }, 100);
+  };
+
+  const handleAction = (type: 'upscale' | 'sync') => {
+    if (type === 'upscale') simulateTask('AI 4K Upscaling');
+    else simulateTask('Offline Cloud Sync');
+  };
 
   const scrollToBottom = () => {
     messagesEndRef.current?.scrollIntoView({ behavior: 'smooth' });
@@ -49,30 +80,56 @@ export default function JudyAI() {
 
   const getJudyResponse = (query: string): string => {
     const q = query.toLowerCase();
+    if (q.includes('upscale')) return "I can enhance any low-resolution content using my deep-learning models. Click the 'Upscale 4K' button to begin!";
+    if (q.includes('offline') || q.includes('sync')) return "I can download and cache your entire cloud library so you can watch movies without an internet connection. Try 'Offline Sync'!";
     if (q.includes('movie') || q.includes('recommend')) return "Based on your taste, I'd recommend 'Dune: Part Two' for its epic scale or 'Arrival' if you want something more cerebral.";
-    if (q.includes('import') || q.includes('add')) return "To import media, just click the '+' icon in the sidebar! Remember to provide a valid video file and a vertical poster.";
-    if (q.includes('money') || q.includes('monetization')) return "SocialFlix uses AI to calculate your earnings based on engagement. You can check your stats in your Profile!";
-    if (q.includes('social')) return "SocialFlix is our short-video platform where you can watch cuts and reviews. It's the Clapperboard icon!";
-    return "I'm not quite sure about that yet, but I can help with movie names, import instructions, or explaining SocialFlix!";
+    return "I'm your cinematic brain! I handle 4K enhancement, offline syncing, and recommendations.";
   };
 
   return (
-    <div className="w-full max-w-4xl mx-auto h-[80vh] flex flex-col bg-app-black border border-white/10 rounded-[40px] overflow-hidden mt-12 mb-12">
+    <div className="w-full max-w-4xl mx-auto h-[80vh] flex flex-col bg-app-black border border-white/10 rounded-[40px] overflow-hidden mt-12 mb-12 shadow-2xl shadow-brand-red/10">
       {/* Header */}
       <div className="p-8 bg-white/5 border-b border-white/10 flex items-center justify-between">
         <div className="flex items-center gap-4">
           <div className="w-12 h-12 bg-brand-red rounded-2xl flex items-center justify-center shadow-lg shadow-brand-red/20">
-             <Sparkles className="w-6 h-6 text-white" />
+             <BrainCircuit className="w-6 h-6 text-white" />
           </div>
           <div>
             <h2 className="text-2xl font-black uppercase tracking-tighter italic">Judy AI</h2>
-            <p className="meta-text text-brand-red">Your Cinematography Guide</p>
+            <p className="meta-text text-brand-red">Quantum Cinematic Intelligence</p>
           </div>
         </div>
-        <div className="flex gap-2">
-           <div className="px-3 py-1 bg-green-500/10 text-green-500 rounded-full text-[10px] font-black uppercase border border-green-500/20">Online</div>
+        <div className="flex gap-3">
+          <button 
+            onClick={() => handleAction('upscale')}
+            disabled={isProcessing}
+            className="flex items-center gap-2 px-4 py-2 bg-white/5 border border-white/10 rounded-xl hover:bg-brand-red hover:text-white transition-all disabled:opacity-50 group"
+          >
+            <Maximize2 className="w-4 h-4 text-brand-red group-hover:text-white" />
+            <span className="text-[10px] font-black uppercase tracking-widest">Upscale 4K</span>
+          </button>
+          <button 
+            onClick={() => handleAction('sync')}
+            disabled={isProcessing}
+            className="flex items-center gap-2 px-4 py-2 bg-white/5 border border-white/10 rounded-xl hover:bg-orange-500 hover:text-white transition-all disabled:opacity-50 group"
+          >
+            <HardDrive className="w-4 h-4 text-orange-500 group-hover:text-white" />
+            <span className="text-[10px] font-black uppercase tracking-widest">Offline Sync</span>
+          </button>
         </div>
       </div>
+
+      {isProcessing && (
+        <div className="px-8 py-4 bg-brand-red/10 border-b border-brand-red/20 space-y-2">
+           <div className="flex justify-between items-center">
+              <span className="text-[10px] font-black uppercase tracking-widest text-brand-red">{activeTask}</span>
+              <span className="text-[10px] font-black uppercase tracking-widest text-brand-red">{progress}%</span>
+           </div>
+           <div className="h-1 w-full bg-white/5 rounded-full overflow-hidden">
+              <motion.div className="h-full bg-brand-red" initial={{ width: 0 }} animate={{ width: `${progress}%` }} />
+           </div>
+        </div>
+      )}
 
       {/* Chat Area */}
       <div className="flex-1 overflow-y-auto p-8 space-y-6 hide-scrollbar bg-[radial-gradient(circle_at_50%_0%,#E5091405,transparent)]">
@@ -95,19 +152,12 @@ export default function JudyAI() {
         <div ref={messagesEndRef} />
       </div>
 
-      {/* Suggestions */}
-      <div className="px-8 py-4 flex gap-3 overflow-x-auto hide-scrollbar bg-black/40">
-         <Suggestion title="Recommend a Movie" onClick={() => setInput("Can you recommend a sci-fi movie?")} />
-         <Suggestion title="How to Import?" onClick={() => setInput("How do I import a movie?")} />
-         <Suggestion title="SocialFlix Help" onClick={() => setInput("Tell me about SocialFlix monetization.")} />
-      </div>
-
       {/* Input Area */}
       <form onSubmit={handleSend} className="p-8 bg-white/5 border-t border-white/10 flex gap-4">
         <input 
           value={input}
           onChange={(e) => setInput(e.target.value)}
-          placeholder="Ask Judy anything..."
+          placeholder="Ask Judy about 4K upscaling or offline play..."
           className="flex-1 bg-black border border-white/10 rounded-2xl px-6 py-4 outline-none focus:border-brand-red transition-all"
         />
         <button 

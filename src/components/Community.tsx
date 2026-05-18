@@ -65,7 +65,7 @@ export default function Community() {
   const filteredComments = useMemo(() => {
     return comments.filter(comment => {
       const matchesCategory = activeCategory === 'All' || comment.category === activeCategory;
-      const matchesSearch = comment.contentTitle.toLowerCase().includes(searchQuery.toLowerCase()) || 
+      const matchesSearch = (comment.contentTitle?.toLowerCase().includes(searchQuery.toLowerCase()) || false) || 
                             comment.text.toLowerCase().includes(searchQuery.toLowerCase()) ||
                             comment.username.toLowerCase().includes(searchQuery.toLowerCase());
       return matchesCategory && matchesSearch;

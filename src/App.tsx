@@ -13,6 +13,8 @@ import Community from './components/Community';
 import SocialFlix from './components/SocialFlix';
 import UserProfile from './components/UserProfile';
 import JudyAI from './components/JudyAI';
+import FlixPlayer from './components/FlixPlayer';
+import AgeRatingBadge from './components/AgeRatingBadge';
 import { getTrending, searchContent } from './services/api';
 import { Content, getTitle, ViewType, UserProfile as UserProfileType } from './types';
 
@@ -30,6 +32,7 @@ export default function App() {
   const [searchQuery, setSearchQuery] = useState('');
   const [searchResults, setSearchResults] = useState<Content[]>([]);
   const [selectedContent, setSelectedContent] = useState<Content | null>(null);
+  const [isPlaying, setIsPlaying] = useState(false);
 
   // Import form state
   const [importTitle, setImportTitle] = useState('');
@@ -45,6 +48,7 @@ export default function App() {
   const [importCategory, setImportCategory] = useState('');
   const [importIsExplicit, setImportIsExplicit] = useState(false);
   const [importAgeRating, setImportAgeRating] = useState(14);
+  const [importTrailerUrl, setImportTrailerUrl] = useState('');
 
   useEffect(() => {
     async function init() {
@@ -61,79 +65,54 @@ export default function App() {
     }
     init();
 
-    // Fetch user info
-    const fetchUser = async () => {
-      try {
-        const res = await fetch('/api/auth/me');
-        if (res.ok) {
-          const userData = await res.json();
-          // Enhance mock data for demonstration if stats aren't in session yet
-          setUser({
-            ...userData,
-            bio: 'Filmmaker and tech enthusiast. Sharing my favorite cuts and reviews from the world of cinema.',
-            subscribers: 12500,
-            totalViews: 850300,
-            totalEarnings: 1540.25,
-            posts: [
-              {
-                id: 'p1',
-                userId: userData.id,
-                username: userData.username,
-                videoUrl: '',
-                thumbnailUrl: 'https://images.unsplash.com/photo-1485846234645-a62644ef7467?w=800&q=80',
-                description: 'The lighting in Dune is just perfection.',
-                contentTitle: 'Dune: Part Two',
-                tags: ['Dune', 'Cinematography'],
-                likes: 4500,
-                views: 45000,
-                comments: 120,
-                isExplicit: false,
-                monetizationEnabled: true,
-                earnings: 25.40
-              }
-            ]
-          });
-        }
-      } catch (e) {
-        console.error('Failed to fetch user', e);
-      }
-    };
-    fetchUser();
+    // Check for local profile or initialize guest
+    const savedUser = localStorage.getItem('flix_user_profile');
+    if (savedUser) {
+      setUser(JSON.parse(savedUser));
+    } else {
+      const guestProfile: UserProfileType = {
+        id: 'guest-' + Math.floor(Math.random() * 100000),
+        username: 'User',
+        bio: 'Cinematography enthusiast exploring Flix.',
+        avatarUrl: 'https://images.unsplash.com/photo-1535713875002-d1d0cf377fde?w=100&h=100&fit=crop',
+        subscribers: 0,
+        totalViews: 0,
+        totalEarnings: 0,
+        posts: [],
+        wishlist: [],
+        playlists: []
+      };
+      setUser(guestProfile);
+      localStorage.setItem('flix_user_profile', JSON.stringify(guestProfile));
+    }
 
-    // Handle OAuth messages
-    const handleAuthMessage = (event: MessageEvent) => {
-      if (event.data?.type === 'OAUTH_AUTH_SUCCESS') {
-        fetchUser();
-      }
-    };
-    window.addEventListener('message', handleAuthMessage);
-
-    // Load from local storage
+    // Load imported items
     const saved = localStorage.getItem('flix_imported');
     if (saved) {
       setImportedItems(JSON.parse(saved));
     }
-
-    return () => window.removeEventListener('message', handleAuthMessage);
   }, []);
 
+  const handlePlay = (content: Content) => {
+    setSelectedContent(content);
+    setIsPlaying(true);
+    setShowSearch(false);
+  };
+
   const handleLogin = async () => {
-    try {
-      const res = await fetch('/api/auth/google/url');
-      const { url } = await res.json();
-      window.open(url, 'google_auth', 'width=600,height=700');
-    } catch (e) {
-      console.error('Login failed', e);
-    }
+    // Repurpose as a simple profile reset or leave empty
+    const newGuest: UserProfileType = {
+      ...user!,
+      username: `Member ${Math.floor(Math.random() * 1000)}`,
+    };
+    setUser(newGuest);
+    localStorage.setItem('flix_user_profile', JSON.stringify(newGuest));
   };
 
   const handleLogout = async () => {
-    try {
-      await fetch('/api/auth/logout', { method: 'POST' });
-      setUser(null);
-    } catch (e) {
-      console.error('Logout failed', e);
-    }
+    // Clear local storage and reset
+    localStorage.removeItem('flix_user_profile');
+    window.location.reload();
   };
 
   const validatePoster = (file: File) => {
@@ -167,8 +146,34 @@ export default function App() {
     }
   }, [searchQuery]);
 
+  const handleAddToWishlist = (content: Content) => {
+    if (!user) return;
+    
+    const contentId = content.id.toString();
+    const isAlreadyIn = user.wishlist?.includes(contentId);
+    
+    const updatedUser = {
+      ...user,
+      wishlist: isAlreadyIn 
+        ? user.wishlist?.filter(id => id !== contentId)
+        : [...(user.wishlist || []), contentId]
+    };
+    
+    setUser(updatedUser);
+    localStorage.setItem('flix_user_profile', JSON.stringify(updatedUser));
+    alert(isAlreadyIn ? "Removed from Wishlist" : "Added to Wishlist");
+  };
+
+  const handleAddToPlaylist = (content: Content) => {
+    if (!user) return;
+    alert(`Coming soon: Adding ${getTitle(content)} to your local playlist!`);
+  };
+
   const handleImport = (e: React.FormEvent) => {
     e.preventDefault();
+    
+    if (!user) return;
+
     if (aspectRatioError) return;
     
     // Create a temporary URL for the video if provided
@@ -193,12 +198,13 @@ export default function App() {
       voteAverage: 10,
       mediaType: importType,
       videoUrl: videoUrl,
+      trailerUrl: importTrailerUrl,
       author: importAuthor,
       director: importDirector,
       dubbers: importDubbers,
       category: importCategory,
       isExplicit: importIsExplicit,
-      ageRating: importIsExplicit ? importAgeRating : undefined
+      ageRating: importIsExplicit ? importAgeRating : 0
     };
 
     const updated = [newItem, ...importedItems];
@@ -217,6 +223,7 @@ export default function App() {
     setImportIsExplicit(false);
     setImportAgeRating(14);
     setImportVideo(null);
+    setImportTrailerUrl('');
     setAspectRatioError(null);
     setShowImport(false);
   };
@@ -250,15 +257,43 @@ export default function App() {
                   animate={{ opacity: 1 }}
                   exit={{ opacity: 0 }}
                 >
-                  {trending.length > 0 && <Hero content={trending[0]} />}
+                  {trending.length > 0 && <Hero content={trending[0]} onPlay={() => handlePlay(trending[0])} />}
 
                   <main className="relative z-10 px-0 md:px-0 -mt-16 md:-mt-32 space-y-16 pb-32">
                     {importedItems.length > 0 && (
-                      <ContentRow title="Imported by You" items={importedItems} onSelect={setSelectedContent} />
+                      <ContentRow 
+                        title="Imported by You" 
+                        items={importedItems} 
+                        onSelect={setSelectedContent}
+                        onAddToPlaylist={handleAddToPlaylist}
+                        onAddToWishlist={handleAddToWishlist}
+                        user={user}
+                      />
                     )}
-                    <ContentRow title="Continue Browsing" items={movies} onSelect={setSelectedContent} />
-                    <ContentRow title="Top Series Pick" items={series} onSelect={setSelectedContent} />
-                    <ContentRow title="New Releases" items={[...trending].reverse()} onSelect={setSelectedContent} />
+                    <ContentRow 
+                      title="Continue Browsing" 
+                      items={movies} 
+                      onSelect={setSelectedContent}
+                      onAddToPlaylist={handleAddToPlaylist}
+                      onAddToWishlist={handleAddToWishlist}
+                      user={user}
+                    />
+                    <ContentRow 
+                      title="Top Series Pick" 
+                      items={series} 
+                      onSelect={setSelectedContent}
+                      onAddToPlaylist={handleAddToPlaylist}
+                      onAddToWishlist={handleAddToWishlist}
+                      user={user}
+                    />
+                    <ContentRow 
+                      title="New Releases" 
+                      items={[...trending].reverse()} 
+                      onSelect={setSelectedContent}
+                      onAddToPlaylist={handleAddToPlaylist}
+                      onAddToWishlist={handleAddToWishlist}
+                      user={user}
+                    />
                     
                     <footer className="mt-24 border-t border-white/5 py-10 px-8 flex flex-col md:flex-row items-center justify-between meta-text opacity-40">
                       <div className="flex gap-12 mb-4 md:mb-0">
@@ -557,6 +592,16 @@ export default function App() {
                   />
                 </div>
 
+                <div>
+                  <label className="meta-text mb-2 block">Trailer URL (Optional)</label>
+                  <input 
+                    value={importTrailerUrl}
+                    onChange={(e) => setImportTrailerUrl(e.target.value)}
+                    placeholder="Enter URL for preview on hover"
+                    className="w-full bg-white/5 border border-white/10 rounded-xl px-4 py-3 outline-none focus:border-brand-red transition-colors"
+                  />
+                </div>
+
                 <button 
                   type="submit"
                   className="w-full py-4 bg-white text-black font-black uppercase tracking-tighter rounded-xl hover:bg-brand-red hover:text-white transition-all transform hover:scale-[1.02] active:scale-95"
@@ -679,11 +724,10 @@ export default function App() {
                         </span>
                         <span>{selectedContent.releaseDate?.split('-')[0]}</span>
                         <span className="px-2 py-0.5 border border-white/20 rounded text-xs">{selectedContent.category || '4K Ultra HD'}</span>
-                        {selectedContent.isExplicit && (
-                          <span className="px-2 py-0.5 bg-brand-red text-white rounded text-[10px] font-black uppercase">
-                            {selectedContent.ageRating}+
-                          </span>
-                        )}
+                        <div className="flex flex-col items-center ml-2">
+                           <span className="text-[8px] font-black opacity-40 mb-0.5">N</span>
+                           <AgeRatingBadge rating={selectedContent.isExplicit ? (selectedContent.ageRating || 18) : 0} />
+                        </div>
                     </div>
                     
                     {/* Metadata Grid */}
@@ -715,11 +759,7 @@ export default function App() {
                     </p>
                     <div className="flex gap-4">
                         <button 
-                          onClick={() => {
-                            if (selectedContent.videoUrl) {
-                              window.open(selectedContent.videoUrl, '_blank');
-                            }
-                          }}
+                          onClick={() => handlePlay(selectedContent)}
                           className="flex-1 md:flex-none flex items-center justify-center gap-3 px-10 py-4 bg-brand-red text-white rounded-xl font-bold hover:bg-red-700 transition-colors shadow-lg shadow-red-900/20"
                         >
                             Play
@@ -732,6 +772,17 @@ export default function App() {
               </div>
             </motion.div>
           </motion.div>
+        )}
+      </AnimatePresence>
+
+      {/* Flix Custom Player */}
+      <AnimatePresence>
+        {isPlaying && selectedContent && (
+          <FlixPlayer 
+            content={selectedContent} 
+            onClose={() => setIsPlaying(false)}
+            user={user}
+          />
         )}
       </AnimatePresence>
     </div>

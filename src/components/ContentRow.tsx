@@ -12,9 +12,12 @@ interface ContentRowProps {
   title: string;
   items: Content[];
   onSelect: (content: Content) => void;
+  onAddToPlaylist?: (content: Content) => void;
+  onAddToWishlist?: (content: Content) => void;
+  user?: any;
 }
 
-export default function ContentRow({ title, items, onSelect }: ContentRowProps) {
+export default function ContentRow({ title, items, onSelect, onAddToPlaylist, onAddToWishlist, user }: ContentRowProps) {
   const rowRef = useRef<HTMLDivElement>(null);
 
   const scroll = (direction: 'left' | 'right') => {
@@ -42,7 +45,14 @@ export default function ContentRow({ title, items, onSelect }: ContentRowProps) 
           className="flex gap-4 overflow-x-auto hide-scrollbar pb-4 scroll-smooth"
         >
           {items.map((item) => (
-            <MovieCard key={item.id} content={item} onClick={onSelect} />
+            <MovieCard 
+              key={item.id} 
+              content={item} 
+              onClick={onSelect}
+              onAddToPlaylist={onAddToPlaylist}
+              onAddToWishlist={onAddToWishlist}
+              inWishlist={user?.wishlist?.includes(item.id.toString())}
+            />
           ))}
         </div>
 

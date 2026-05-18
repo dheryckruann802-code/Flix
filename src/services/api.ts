@@ -52,7 +52,8 @@ export const getTrending = async (type: 'all' | 'movie' | 'tv' = 'all'): Promise
       backdropPath: item.backdrop_path ? `https://image.tmdb.org/t/p/original${item.backdrop_path}` : '',
       releaseDate: item.release_date || item.first_air_date,
       voteAverage: item.vote_average,
-      mediaType: item.media_type || (item.title ? 'movie' : 'tv')
+      mediaType: item.media_type || (item.title ? 'movie' : 'tv'),
+      trailerUrl: "https://commondatastorage.googleapis.com/gtv-videos-bucket/sample/ElephantsDream.mp4"
     }));
   } catch (error) {
     console.error('Error fetching trending:', error);
@@ -72,7 +73,8 @@ export const searchContent = async (query: string): Promise<Content[]> => {
       backdropPath: item.backdrop_path ? `https://image.tmdb.org/t/p/original${item.backdrop_path}` : '',
       releaseDate: item.release_date || item.first_air_date,
       voteAverage: item.vote_average,
-      mediaType: item.media_type
+      mediaType: item.media_type,
+      trailerUrl: "https://commondatastorage.googleapis.com/gtv-videos-bucket/sample/ElephantsDream.mp4"
     }));
   } catch (error) {
     console.error('Error searching:', error);

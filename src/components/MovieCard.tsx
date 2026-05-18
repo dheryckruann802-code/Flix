@@ -3,7 +3,8 @@
  * SPDX-License-Identifier: Apache-2.0
  */
 
-import { motion } from 'motion/react';
+import React, { useState } from 'react';
+import { motion, AnimatePresence } from 'motion/react';
 import { Play, Info, Star } from 'lucide-react';
 import { Content, getTitle } from '../types';
 
@@ -14,24 +15,53 @@ interface MovieCardProps {
 }
 
 export default function MovieCard({ content, onClick }: MovieCardProps) {
+  const [isHovered, setIsHovered] = useState(false);
   const title = getTitle(content);
+
   return (
     <motion.div
+      onMouseEnter={() => setIsHovered(true)}
+      onMouseLeave={() => setIsHovered(false)}
       whileHover={{ y: -5 }}
       whileTap={{ scale: 0.98 }}
       layoutId={`card-${content.id}`}
       className="relative flex-none w-48 md:w-64 aspect-video rounded-none overflow-hidden cursor-pointer group bg-white/5 border border-white/10"
       onClick={() => onClick(content)}
     >
-      <img
-        src={content.backdropPath || content.posterPath || 'https://via.placeholder.com/500x750?text=No+Preview'}
-        alt={title}
-        className="w-full h-full object-cover opacity-60 group-hover:opacity-100 transition-all duration-700 group-hover:scale-105"
-        referrerPolicy="no-referrer"
-      />
+      <AnimatePresence mode="wait">
+        {isHovered && content.trailerUrl ? (
+          <motion.div 
+            key="trailer"
+            initial={{ opacity: 0 }}
+            animate={{ opacity: 1 }}
+            exit={{ opacity: 0 }}
+            className="absolute inset-0 z-10"
+          >
+            <video 
+              src={content.trailerUrl}
+              autoPlay
+              muted
+              loop
+              playsInline
+              className="w-full h-full object-cover"
+            />
+          </motion.div>
+        ) : (
+          <motion.img
+            key="poster"
+            initial={{ opacity: 0.6 }}
+            animate={{ opacity: 0.6 }}
+            exit={{ opacity: 0.6 }}
+            src={content.backdropPath || content.posterPath || 'https://via.placeholder.com/500x750?text=No+Preview'}
+            alt={title}
+            className="w-full h-full object-cover group-hover:opacity-100 transition-all duration-700 group-hover:scale-105"
+            referrerPolicy="no-referrer"
+          />
+        )}
+      </AnimatePresence>
       
       {/* Custom Progress Bar for cinematic look */}
-      <div className="absolute bottom-0 left-0 right-0 h-[2px] bg-white/10">
+      <div className="absolute bottom-0 left-0 right-0 h-[2px] bg-white/10 z-20">
         <div 
           className="h-full bg-brand-red shadow-[0_0_8px_rgba(229,9,20,0.8)]" 
           style={{ width: `${Math.random() * 80 + 20}%` }} 

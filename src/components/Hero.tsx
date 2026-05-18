@@ -6,12 +6,14 @@
 import { motion } from 'motion/react';
 import { Play, Info, Star } from 'lucide-react';
 import { Content, getTitle } from '../types';
+import AgeRatingBadge from './AgeRatingBadge';
 
 interface HeroProps {
   content: Content;
+  onPlay: () => void;
 }
 
-export default function Hero({ content }: HeroProps) {
+export default function Hero({ content, onPlay }: HeroProps) {
   const title = getTitle(content);
   return (
     <div className="relative h-screen w-full mb-12">
@@ -50,9 +52,17 @@ export default function Hero({ content }: HeroProps) {
           </h1>
 
           <div className="flex flex-wrap items-center gap-10">
-            <button className="px-10 py-4 bg-[#F5F5F5] text-black font-black uppercase tracking-tighter text-sm hover:bg-brand-red hover:text-white transition-all transform hover:scale-105 active:scale-95 shadow-2xl">
-              Watch Trailer
-            </button>
+            <div className="flex gap-4">
+              <button 
+                onClick={onPlay}
+                className="px-12 py-4 bg-brand-red text-white font-black uppercase tracking-tighter text-sm hover:bg-white hover:text-black transition-all transform hover:scale-105 active:scale-95 shadow-2xl flex items-center gap-3"
+              >
+                <Play className="w-5 h-5 fill-current" /> Play
+              </button>
+              <button className="px-10 py-4 bg-white/5 border border-white/10 text-white font-black uppercase tracking-tighter text-sm hover:bg-white/10 transition-all transform active:scale-95">
+                Watch Trailer
+              </button>
+            </div>
             <div className="flex items-center gap-8">
               <div className="flex flex-col">
                 <span className="meta-text mb-0.5">Duration</span>
@@ -60,7 +70,10 @@ export default function Hero({ content }: HeroProps) {
               </div>
               <div className="flex flex-col border-l border-white/10 pl-8">
                 <span className="meta-text mb-0.5">Rating</span>
-                <span className="text-sm font-medium tracking-tight">PG-13</span>
+                <div className="mt-1 flex flex-col items-center">
+                   <span className="text-[8px] font-black opacity-40 mb-1">N</span>
+                   <AgeRatingBadge rating={content.isExplicit ? (content.ageRating || 18) : 0} />
+                </div>
               </div>
               <div className="flex flex-col border-l border-white/10 pl-8">
                 <span className="meta-text mb-0.5">Vote</span>

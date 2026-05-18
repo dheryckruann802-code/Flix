@@ -22,6 +22,11 @@ const PORT = 3000;
 // Google OAuth Setup
 const CLIENT_ID = process.env.VITE_GOOGLE_CLIENT_ID;
 const CLIENT_SECRET = process.env.GOOGLE_CLIENT_SECRET;
+
+if (!CLIENT_ID || !CLIENT_SECRET) {
+  console.warn('WARNING: VITE_GOOGLE_CLIENT_ID or GOOGLE_CLIENT_SECRET is missing. Google Login will fail.');
+}
+
 const oauthClient = new OAuth2Client(CLIENT_ID, CLIENT_SECRET);
 
 app.use(express.json());
@@ -36,9 +41,24 @@ app.use(cookieSession({
   httpOnly: true,
 }));
 
+// Helper to get origin
+const getOrigin = (req: express.Request) => {
+  const host = req.headers['x-forwarded-host'] || req.headers.host;
+  const proto = req.headers['x-forwarded-proto'] || 'https';
+  return `${proto}://${host}`;
+};
+
 // Auth Routes
 app.get('/api/auth/google/url', (req, res) => {
-  const origin = req.headers.origin || `https://${req.headers.host}`;
+  if (!CLIENT_ID || !CLIENT_SECRET) {
+    return res.json({ 
+      url: '/auth/demo-login', 
+      isDemo: true,
+      warning: 'OAuth credentials not configured' 
+    });
+  }
+
+  const origin = getOrigin(req);
   const redirectUri = `${origin}/auth/callback`;
   
   const url = oauthClient.generateAuthUrl({
@@ -54,9 +74,56 @@ app.get('/api/auth/google/url', (req, res) => {
   res.json({ url });
 });
 
+app.get('/auth/demo-login', (req, res) => {
+  const demoUser = {
+    id: 'demo-user-' + Math.floor(Math.random() * 1000),
+    username: 'Demo User',
+    email: 'demo@socialflix.ai',
+    avatarUrl: 'https://images.unsplash.com/photo-1535713875002-d1d0cf377fde?w=100&h=100&fit=crop',
+    bio: 'Cinema lover testing out SocialFlix! (Demo Mode)',
+    subscribers: 125,
+    totalEarnings: 45,
+    posts: [],
+    wishlist: [],
+    playlists: []
+  };
+  
+  res.send(`
+    <html>
+      <head>
+        <title>SocialFlix Login</title>
+        <style>
+          body { background: #050505; color: white; font-family: sans-serif; display: flex; flex-direction: column; align-items: center; justify-content: center; height: 100vh; margin: 0; }
+          .card { background: #111; padding: 2.5rem; border-radius: 2rem; border: 1px solid #333; text-align: center; max-width: 400px; box-shadow: 0 20px 50px rgba(0,0,0,0.8); }
+          h2 { margin-top: 0; font-size: 1.75rem; letter-spacing: -0.05em; text-transform: uppercase; font-weight: 900; }
+          button { background: #E50914; color: white; border: none; padding: 0.85rem 2.5rem; border-radius: 1rem; font-weight: 900; cursor: pointer; margin-top: 2rem; transition: all 0.2s; text-transform: uppercase; letter-spacing: 0.1em; font-size: 0.75rem; }
+          button:hover { transform: scale(1.05); background: #f40a16; }
+          .warning { color: #888; font-size: 0.7rem; font-weight: bold; margin-bottom: 2rem; text-transform: uppercase; letter-spacing: 0.2em; border: 1px solid #333; padding: 0.5rem; border-radius: 0.5rem; }
+          p { color: #555; font-size: 0.85rem; line-height: 1.5; margin: 0; }
+          .brand { color: #E50914; }
+        </style>
+      </head>
+      <body>
+        <div class="card">
+          <div class="warning">OAuth Not Configured</div>
+          <h2>Social<span class="brand">Flix</span></h2>
+          <p>You can use this app in <strong>Demo Mode</strong> while the Google OAuth credentials are not set in the Settings menu.</p>
+          <button onclick="login()">Continue as Guest</button>
+        </div>
+        <script>
+          function login() {
+            window.opener.postMessage({ type: 'AUTH_SUCCESS', user: ${JSON.stringify(demoUser)} }, '*');
+            window.close();
+          }
+        </script>
+      </body>
+    </html>
+  `);
+});
+
 app.get(['/auth/callback', '/auth/callback/'], async (req, res) => {
   const code = req.query.code as string;
-  const origin = `https://${req.headers.host}`;
+  const origin = getOrigin(req);
   const redirectUri = `${origin}/auth/callback`;
 
   try {

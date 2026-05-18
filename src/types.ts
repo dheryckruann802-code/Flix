@@ -15,6 +15,7 @@ export interface Movie {
   mediaType: 'movie' | 'tv';
   // Custom fields
   videoUrl?: string;
+  trailerUrl?: string;
   author?: string;
   director?: string;
   dubbers?: string;
@@ -35,6 +36,7 @@ export interface Series {
   mediaType: 'tv';
   // Custom fields
   videoUrl?: string;
+  trailerUrl?: string;
   author?: string;
   director?: string;
   dubbers?: string;
@@ -49,10 +51,12 @@ export interface Comment {
   id: string;
   userId: string;
   username: string;
-  contentId: string;
-  contentTitle: string;
-  category: string;
+  avatarUrl?: string;
+  contentId?: string;
+  contentTitle?: string;
+  category?: string;
   text: string;
+  rating?: number; // 0-5
   timestamp: string;
   likes: number;
 }
@@ -77,12 +81,17 @@ export interface SocialPost {
 export interface UserProfile {
   id: string;
   username: string;
+  email?: string;
   bio: string;
   avatarUrl: string;
   subscribers: number;
   totalViews: number;
   totalEarnings: number;
   posts: SocialPost[];
+  playlists?: { id: string; name: string; items: string[] }[];
+  wishlist?: string[]; // IDs of content
+  youtubeLink?: string;
+  externalLinks?: { label: string; url: string }[];
 }
 
 export type CommunityCategory = 'All' | 'Discussion' | 'Review' | 'Theory' | 'News';
