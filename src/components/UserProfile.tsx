@@ -15,17 +15,21 @@ import {
   TrendingUp,
   LayoutGrid,
   Edit2,
-  Youtube
+  Youtube,
+  Globe
 } from 'lucide-react';
 import { UserProfile as UserProfileType } from '../types';
+import { useTranslation } from '../lib/i18n';
 
 interface UserProfileProps {
   profile: UserProfileType | null;
   onLogin: () => void;
   onLogout: () => void;
+  onOpenLanguage: () => void;
 }
 
-export default function UserProfile({ profile, onLogin, onLogout }: UserProfileProps) {
+export default function UserProfile({ profile, onLogin, onLogout, onOpenLanguage }: UserProfileProps) {
+  const { t } = useTranslation();
   const [isEditing, setIsEditing] = React.useState(false);
   const [editName, setEditName] = React.useState(profile?.username || '');
   const [editBio, setEditBio] = React.useState(profile?.bio || '');
@@ -159,6 +163,12 @@ export default function UserProfile({ profile, onLogin, onLogout }: UserProfileP
                     <Edit2 className="w-4 h-4" /> Edit Profile
                   </button>
                   <button 
+                    onClick={onOpenLanguage}
+                    className="px-8 py-3 bg-white/5 border border-white/10 text-brand-red font-black rounded-xl hover:bg-brand-red hover:text-white transition-all uppercase text-xs tracking-widest flex items-center gap-2"
+                  >
+                    <Globe className="w-4 h-4" /> {profile.preferredLanguage || 'Language'}
+                  </button>
+                  <button 
                     onClick={onLogout}
                     className="px-8 py-3 bg-white/5 border border-white/10 text-white/40 font-black rounded-xl hover:bg-white/10 transition-all uppercase text-xs tracking-widest"
                   >
@@ -194,9 +204,9 @@ export default function UserProfile({ profile, onLogin, onLogout }: UserProfileP
 
       {/* Stats Quick View */}
       <div className="grid grid-cols-1 md:grid-cols-3 gap-6 mb-12">
-        <MetricCard icon={<Users className="w-6 h-6" />} label="Subscribers" value={(profile.subscribers || 0).toLocaleString()} />
-        <MetricCard icon={<Eye className="w-6 h-6" />} label="Total Views" value={(profile.totalViews || 0).toLocaleString()} />
-        <MetricCard icon={<Video className="w-6 h-6" />} label="Total Posts" value={profile.posts.length} />
+        <MetricCard icon={<Users className="w-6 h-6" />} label={t('subscribers')} value={(profile.subscribers || 0).toLocaleString()} />
+        <MetricCard icon={<Eye className="w-6 h-6" />} label={t('total_views')} value={(profile.totalViews || 0).toLocaleString()} />
+        <MetricCard icon={<Video className="w-6 h-6" />} label={t('total_posts')} value={profile.posts.length} />
       </div>
 
       {/* Tabs */}

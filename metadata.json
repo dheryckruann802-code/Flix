@@ -2,5 +2,5 @@
   "name": "Flix",
   "description": "A premium movie and TV show streaming catalog with a cinematic interface and high-performance browsing.",
   "requestFramePermissions": [],
-  "majorCapabilities": []
+  "majorCapabilities": ["MAJOR_CAPABILITY_SERVER_SIDE_GEMINI_API"]
 }

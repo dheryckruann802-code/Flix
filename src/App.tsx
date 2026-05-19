@@ -5,7 +5,7 @@
 
 import React, { useState, useEffect } from 'react';
 import { motion, AnimatePresence } from 'motion/react';
-import { Search, X, Loader2, Plus, Upload, Film, Tv } from 'lucide-react';
+import { Search, X, Loader2, Plus, Upload, Film, Tv, ListPlus } from 'lucide-react';
 import Navigation from './components/Navigation';
 import Hero from './components/Hero';
 import ContentRow from './components/ContentRow';
@@ -13,12 +13,17 @@ import Community from './components/Community';
 import SocialFlix from './components/SocialFlix';
 import UserProfile from './components/UserProfile';
 import JudyAI from './components/JudyAI';
+import MovieHub from './components/MovieHub';
+import LanguageSelector from './components/LanguageSelector';
+import PlaylistModal from './components/PlaylistModal';
 import FlixPlayer from './components/FlixPlayer';
 import AgeRatingBadge from './components/AgeRatingBadge';
 import { getTrending, searchContent } from './services/api';
 import { Content, getTitle, ViewType, UserProfile as UserProfileType } from './types';
+import { useTranslation } from './lib/i18n';
 
 export default function App() {
+  const { t, setLanguage, isLoading: isTranslating } = useTranslation();
   const [user, setUser] = useState<UserProfileType | null>(null);
   const [trending, setTrending] = useState<Content[]>([]);
   const [movies, setMovies] = useState<Content[]>([]);
@@ -27,11 +32,14 @@ export default function App() {
   const [loading, setLoading] = useState(true);
   const [showSearch, setShowSearch] = useState(false);
   const [showImport, setShowImport] = useState(false);
+  const [showLanguage, setShowLanguage] = useState(false);
   const [currentView, setCurrentView] = useState<ViewType>('home');
   const [userAge, setUserAge] = useState(16); // Default for testing SafeSearch
   const [searchQuery, setSearchQuery] = useState('');
   const [searchResults, setSearchResults] = useState<Content[]>([]);
   const [selectedContent, setSelectedContent] = useState<Content | null>(null);
+  const [playlistContent, setPlaylistContent] = useState<Content | null>(null);
+  const [showPlaylistModal, setShowPlaylistModal] = useState(false);
   const [isPlaying, setIsPlaying] = useState(false);
 
   // Import form state
@@ -49,6 +57,8 @@ export default function App() {
   const [importIsExplicit, setImportIsExplicit] = useState(false);
   const [importAgeRating, setImportAgeRating] = useState(14);
   const [importTrailerUrl, setImportTrailerUrl] = useState('');
+  const [importLanguage, setImportLanguage] = useState('Original');
+  const [importIsDubbed, setImportIsDubbed] = useState(false);
 
   useEffect(() => {
     async function init() {
@@ -68,7 +78,11 @@ export default function App() {
     // Check for local profile or initialize guest
     const savedUser = localStorage.getItem('flix_user_profile');
     if (savedUser) {
-      setUser(JSON.parse(savedUser));
+      const parsed = JSON.parse(savedUser);
+      setUser(parsed);
+      if (parsed.preferredLanguage) {
+        setLanguage(parsed.preferredLanguage);
+      }
     } else {
       const guestProfile: UserProfileType = {
         id: 'guest-' + Math.floor(Math.random() * 100000),
@@ -80,7 +94,8 @@ export default function App() {
         totalEarnings: 0,
         posts: [],
         wishlist: [],
-        playlists: []
+        playlists: [],
+        preferredLanguage: ''
       };
       setUser(guestProfile);
       localStorage.setItem('flix_user_profile', JSON.stringify(guestProfile));
@@ -161,12 +176,12 @@ export default function App() {
     
     setUser(updatedUser);
     localStorage.setItem('flix_user_profile', JSON.stringify(updatedUser));
-    alert(isAlreadyIn ? "Removed from Wishlist" : "Added to Wishlist");
   };
 
   const handleAddToPlaylist = (content: Content) => {
     if (!user) return;
-    alert(`Coming soon: Adding ${getTitle(content)} to your local playlist!`);
+    setPlaylistContent(content);
+    setShowPlaylistModal(true);
   };
 
   const handleImport = (e: React.FormEvent) => {
@@ -203,6 +218,9 @@ export default function App() {
       director: importDirector,
       dubbers: importDubbers,
       category: importCategory,
+      isDubbed: importIsDubbed,
+      language: importLanguage,
+      importedBy: user?.username || 'User',
       isExplicit: importIsExplicit,
       ageRating: importIsExplicit ? importAgeRating : 0
     };
@@ -224,6 +242,8 @@ export default function App() {
     setImportAgeRating(14);
     setImportVideo(null);
     setImportTrailerUrl('');
+    setImportLanguage('Original');
+    setImportIsDubbed(false);
     setAspectRatioError(null);
     setShowImport(false);
   };
@@ -257,7 +277,15 @@ export default function App() {
                   animate={{ opacity: 1 }}
                   exit={{ opacity: 0 }}
                 >
-                  {trending.length > 0 && <Hero content={trending[0]} onPlay={() => handlePlay(trending[0])} />}
+                  {trending.length > 0 && (
+                    <Hero 
+                      content={trending[0]} 
+                      onPlay={() => handlePlay(trending[0])} 
+                      onAddToPlaylist={handleAddToPlaylist}
+                      onAddToWishlist={handleAddToWishlist}
+                      inWishlist={user?.wishlist?.includes(trending[0].id.toString())}
+                    />
+                  )}
 
                   <main className="relative z-10 px-0 md:px-0 -mt-16 md:-mt-32 space-y-16 pb-32">
                     {importedItems.length > 0 && (
@@ -329,6 +357,23 @@ export default function App() {
                   <SocialFlix userAge={userAge} />
                 </motion.div>
               )}
+              {currentView === 'hub' && (
+                <motion.div
+                  key="hub"
+                  initial={{ opacity: 0 }}
+                  animate={{ opacity: 1 }}
+                  exit={{ opacity: 0 }}
+                >
+                  <MovieHub 
+                    importedItems={importedItems} 
+                    onPlay={handlePlay} 
+                    onAddToPlaylist={handleAddToPlaylist}
+                    onAddToWishlist={handleAddToWishlist}
+                    user={user}
+                    preferredLanguage={user?.preferredLanguage}
+                  />
+                </motion.div>
+              )}
               {currentView === 'judy' && (
                 <motion.div
                   key="judy"
@@ -350,6 +395,7 @@ export default function App() {
                     profile={user} 
                     onLogin={handleLogin} 
                     onLogout={handleLogout} 
+                    onOpenLanguage={() => setShowLanguage(true)}
                   />
                 </motion.div>
               )}
@@ -506,6 +552,31 @@ export default function App() {
                       </div>
                     )}
                   </div>
+                </div>
+
+                <div className="grid grid-cols-1 md:grid-cols-2 gap-6 p-4 bg-white/5 border border-white/10 rounded-2xl">
+                  <div>
+                    <label className="meta-text mb-2 block">Audio Language</label>
+                    <input 
+                      value={importLanguage}
+                      onChange={(e) => setImportLanguage(e.target.value)}
+                      placeholder="e.g. Portuguese (BR)"
+                      className="w-full bg-black/40 border border-white/10 rounded-xl px-4 py-2 outline-none focus:border-brand-red text-sm"
+                    />
+                  </div>
+                  <div className="flex items-center justify-between">
+                    <label className="meta-text">Dubbed Version?</label>
+                    <button 
+                      type="button"
+                      onClick={() => setImportIsDubbed(!importIsDubbed)}
+                      className={`px-6 py-2 rounded-xl text-[10px] font-black uppercase tracking-widest transition-all ${importIsDubbed ? 'bg-blue-600 text-white shadow-lg shadow-blue-900/40' : 'bg-white/5 text-white/40 border border-white/10'}`}
+                    >
+                      {importIsDubbed ? 'Dubbed (Detected)' : 'Original Audio'}
+                    </button>
+                  </div>
+                  <p className="col-span-full text-[8px] text-white/20 uppercase tracking-widest leading-relaxed">
+                    Note: Judy AI will analyze the vocal metadata upon submission to verify the linguistic integrity of the upload.
+                  </p>
                 </div>
 
                 <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
@@ -764,7 +835,21 @@ export default function App() {
                         >
                             Play
                         </button>
-                        <button className="flex items-center justify-center p-4 bg-white/10 rounded-xl hover:bg-white/20 transition-colors border border-white/10">
+                        <button 
+                          onClick={() => handleAddToWishlist(selectedContent)}
+                          className={`flex items-center justify-center p-4 rounded-xl transition-colors border ${user?.wishlist?.includes(selectedContent.id.toString()) ? 'bg-brand-red border-brand-red text-white' : 'bg-white/10 border-white/10 text-white hover:bg-white/20'}`}
+                          title="Add to Wishlist"
+                        >
+                            <Plus className={`w-6 h-6 transition-transform ${user?.wishlist?.includes(selectedContent.id.toString()) ? 'rotate-45' : ''}`} />
+                        </button>
+                        <button 
+                          onClick={() => handleAddToPlaylist(selectedContent)}
+                          className="flex items-center justify-center p-4 bg-white/10 rounded-xl hover:bg-white/20 transition-colors border border-white/10 text-white"
+                          title="Add to Playlist"
+                        >
+                            <ListPlus className="w-6 h-6" />
+                        </button>
+                        <button className="flex items-center justify-center p-4 bg-white/10 rounded-xl hover:bg-white/20 transition-colors border border-white/10 text-white">
                             <Search className="w-6 h-6 rotate-45" />
                         </button>
                     </div>
@@ -783,6 +868,53 @@ export default function App() {
             onClose={() => setIsPlaying(false)}
             user={user}
           />
+        )}
+      </AnimatePresence>
+      
+      <LanguageSelector 
+        isOpen={showLanguage || (!!user && !user.preferredLanguage)} 
+        onClose={() => setShowLanguage(false)} 
+        currentLanguage={user?.preferredLanguage || ''} 
+        isMandatory={!!user && !user.preferredLanguage}
+        onLanguageChange={(lang) => {
+          if (user) {
+            const updated = { ...user, preferredLanguage: lang };
+            setUser(updated);
+            localStorage.setItem('flix_user_profile', JSON.stringify(updated));
+            setLanguage(lang);
+            setShowLanguage(false);
+          }
+        }}
+      />
+      <PlaylistModal 
+        isOpen={showPlaylistModal} 
+        onClose={() => {
+          setShowPlaylistModal(false);
+          setPlaylistContent(null);
+        }} 
+        content={playlistContent} 
+        user={user} 
+        onUpdateUser={(updated) => {
+          setUser(updated);
+          localStorage.setItem('flix_user_profile', JSON.stringify(updated));
+        }}
+      />
+      <AnimatePresence>
+        {isTranslating && (
+          <motion.div 
+            initial={{ opacity: 0 }}
+            animate={{ opacity: 1 }}
+            exit={{ opacity: 0 }}
+            className="fixed inset-0 z-[200] bg-black/60 backdrop-blur-md flex flex-col items-center justify-center"
+          >
+            <div className="relative">
+              <Loader2 className="w-12 h-12 text-brand-red animate-spin" />
+              <div className="absolute inset-0 blur-xl bg-brand-red/30 animate-pulse" />
+            </div>
+            <p className="mt-6 text-[10px] font-black uppercase tracking-[0.3em] text-white/60 animate-pulse">
+              Judy AI is translating the interface...
+            </p>
+          </motion.div>
         )}
       </AnimatePresence>
     </div>

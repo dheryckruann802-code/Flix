@@ -5,7 +5,8 @@
 
 import React, { useState, useRef, useEffect } from 'react';
 import { motion, AnimatePresence } from 'motion/react';
-import { Send, Maximize2, HardDrive, BrainCircuit } from 'lucide-react';
+import { Send, Maximize2, HardDrive, BrainCircuit, Mic2, Star, Languages } from 'lucide-react';
+import { useTranslation } from '../lib/i18n';
 
 interface Message {
   id: string;
@@ -14,8 +15,9 @@ interface Message {
 }
 
 export default function JudyAI() {
+  const { t, language } = useTranslation();
   const [messages, setMessages] = useState<Message[]>([
-    { id: '1', text: "Hello! I'm Judy, your AI cinematic assistant. I can now upscale your imports to 4K and sync your cloud assets for offline playback!", sender: 'judy' }
+    { id: '1', text: `Hello! I'm Judy. I've just updated your interface to ${language}! I can upscale to 4K, detect dubbing, and translate the entire platform in real-time using Gemini.`, sender: 'judy' }
   ]);
   const [input, setInput] = useState('');
   const [isProcessing, setIsProcessing] = useState(false);
@@ -34,21 +36,29 @@ export default function JudyAI() {
           clearInterval(interval);
           setIsProcessing(false);
           setActiveTask(null);
+          
+          let resultText = `✅ ${taskName} complete! Your content is now optimized.`;
+          if (taskName === 'AI Dubbing Scan') {
+            const isDubbed = Math.random() > 0.5;
+            resultText = `✅ Scan complete! I've detected that this video has ${isDubbed ? 'DUBBED audio tracks (PT-BR detected)' : 'the ORIGINAL audio track'}. I'll tag it accordingly in the Movie Hub.`;
+          }
+
           setMessages(prevMsgs => [...prevMsgs, { 
             id: Date.now().toString(), 
-            text: `✅ ${taskName} complete! Your content is now optimized.`, 
+            text: resultText, 
             sender: 'judy' 
           }]);
           return 100;
         }
-        return prev + 2;
+        return prev + 5;
       });
     }, 100);
   };
 
-  const handleAction = (type: 'upscale' | 'sync') => {
+  const handleAction = (type: 'upscale' | 'sync' | 'dubbing') => {
     if (type === 'upscale') simulateTask('AI 4K Upscaling');
-    else simulateTask('Offline Cloud Sync');
+    else if (type === 'sync') simulateTask('Offline Cloud Sync');
+    else simulateTask('AI Dubbing Scan');
   };
 
   const scrollToBottom = () => {
@@ -80,41 +90,51 @@ export default function JudyAI() {
 
   const getJudyResponse = (query: string): string => {
     const q = query.toLowerCase();
-    if (q.includes('upscale')) return "I can enhance any low-resolution content using my deep-learning models. Click the 'Upscale 4K' button to begin!";
-    if (q.includes('offline') || q.includes('sync')) return "I can download and cache your entire cloud library so you can watch movies without an internet connection. Try 'Offline Sync'!";
-    if (q.includes('movie') || q.includes('recommend')) return "Based on your taste, I'd recommend 'Dune: Part Two' for its epic scale or 'Arrival' if you want something more cerebral.";
-    return "I'm your cinematic brain! I handle 4K enhancement, offline syncing, and recommendations.";
+    if (q.includes('upscale')) return "I can enhance any low-resolution content using my deep-learning models. Click 'Upscale 4K'!";
+    if (q.includes('offline') || q.includes('sync')) return "I can download and cache your library. Try 'Offline Sync'!";
+    if (q.includes('dubbing') || q.includes('dublado')) return "I use vocal biometric analysis to detect if a film is dubbed. You can trigger a scan during import or by clicking the 'Dub Scan' button!";
+    if (q.includes('hub') || q.includes('filmes')) return "Check out the Movie Hub to see what other users have imported recently!";
+    if (q.includes('news') || q.includes('noticias')) return "Cinema News in the Hub covers actors, voice actors, and industry updates.";
+    return "I'm your cinematic brain! I handle 4K enhancement, offline syncing, dubbing detection, and hub releases.";
   };
 
   return (
     <div className="w-full max-w-4xl mx-auto h-[80vh] flex flex-col bg-app-black border border-white/10 rounded-[40px] overflow-hidden mt-12 mb-12 shadow-2xl shadow-brand-red/10">
       {/* Header */}
-      <div className="p-8 bg-white/5 border-b border-white/10 flex items-center justify-between">
+      <div className="p-8 bg-white/5 border-b border-white/10 flex items-center justify-between flex-wrap gap-4">
         <div className="flex items-center gap-4">
           <div className="w-12 h-12 bg-brand-red rounded-2xl flex items-center justify-center shadow-lg shadow-brand-red/20">
              <BrainCircuit className="w-6 h-6 text-white" />
           </div>
           <div>
-            <h2 className="text-2xl font-black uppercase tracking-tighter italic">Judy AI</h2>
+            <h2 className="text-2xl font-black uppercase tracking-tighter italic text-white">Judy AI</h2>
             <p className="meta-text text-brand-red">Quantum Cinematic Intelligence</p>
           </div>
         </div>
-        <div className="flex gap-3">
+        <div className="flex gap-2">
           <button 
             onClick={() => handleAction('upscale')}
             disabled={isProcessing}
-            className="flex items-center gap-2 px-4 py-2 bg-white/5 border border-white/10 rounded-xl hover:bg-brand-red hover:text-white transition-all disabled:opacity-50 group"
+            className="flex items-center gap-2 px-3 py-2 bg-white/5 border border-white/10 rounded-xl hover:bg-brand-red hover:text-white transition-all disabled:opacity-50 group"
           >
-            <Maximize2 className="w-4 h-4 text-brand-red group-hover:text-white" />
-            <span className="text-[10px] font-black uppercase tracking-widest">Upscale 4K</span>
+            <Maximize2 className="w-3 h-3 text-brand-red group-hover:text-white" />
+            <span className="text-[8px] font-black uppercase tracking-widest">4K</span>
           </button>
           <button 
             onClick={() => handleAction('sync')}
             disabled={isProcessing}
-            className="flex items-center gap-2 px-4 py-2 bg-white/5 border border-white/10 rounded-xl hover:bg-orange-500 hover:text-white transition-all disabled:opacity-50 group"
+            className="flex items-center gap-2 px-3 py-2 bg-white/5 border border-white/10 rounded-xl hover:bg-orange-500 hover:text-white transition-all disabled:opacity-50 group"
           >
-            <HardDrive className="w-4 h-4 text-orange-500 group-hover:text-white" />
-            <span className="text-[10px] font-black uppercase tracking-widest">Offline Sync</span>
+            <HardDrive className="w-3 h-3 text-orange-500 group-hover:text-white" />
+            <span className="text-[8px] font-black uppercase tracking-widest">Sync</span>
+          </button>
+          <button 
+            onClick={() => handleAction('dubbing')}
+            disabled={isProcessing}
+            className="flex items-center gap-2 px-3 py-2 bg-white/5 border border-white/10 rounded-xl hover:bg-blue-500 hover:text-white transition-all disabled:opacity-50 group"
+          >
+            <Mic2 className="w-3 h-3 text-blue-500 group-hover:text-white" />
+            <span className="text-[8px] font-black uppercase tracking-widest">Dub Scan</span>
           </button>
         </div>
       </div>

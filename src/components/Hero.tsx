@@ -4,16 +4,21 @@
  */
 
 import { motion } from 'motion/react';
-import { Play, Info, Star } from 'lucide-react';
+import { Play, Info, Star, Plus, ListPlus } from 'lucide-react';
 import { Content, getTitle } from '../types';
 import AgeRatingBadge from './AgeRatingBadge';
+import { useTranslation } from '../lib/i18n';
 
 interface HeroProps {
   content: Content;
   onPlay: () => void;
+  onAddToPlaylist?: (content: Content) => void;
+  onAddToWishlist?: (content: Content) => void;
+  inWishlist?: boolean;
 }
 
-export default function Hero({ content, onPlay }: HeroProps) {
+export default function Hero({ content, onPlay, onAddToPlaylist, onAddToWishlist, inWishlist }: HeroProps) {
+  const { t } = useTranslation();
   const title = getTitle(content);
   return (
     <div className="relative h-screen w-full mb-12">
@@ -57,10 +62,19 @@ export default function Hero({ content, onPlay }: HeroProps) {
                 onClick={onPlay}
                 className="px-12 py-4 bg-brand-red text-white font-black uppercase tracking-tighter text-sm hover:bg-white hover:text-black transition-all transform hover:scale-105 active:scale-95 shadow-2xl flex items-center gap-3"
               >
-                <Play className="w-5 h-5 fill-current" /> Play
+                <Play className="w-5 h-5 fill-current" /> {t('watch_now')}
               </button>
-              <button className="px-10 py-4 bg-white/5 border border-white/10 text-white font-black uppercase tracking-tighter text-sm hover:bg-white/10 transition-all transform active:scale-95">
-                Watch Trailer
+              <button 
+                onClick={() => onAddToWishlist?.(content)}
+                className={`px-10 py-4 border font-black uppercase tracking-tighter text-sm transition-all transform active:scale-95 flex items-center gap-3 ${inWishlist ? 'bg-brand-red border-brand-red text-white' : 'bg-white/5 border-white/10 text-white hover:bg-white/10'}`}
+              >
+                <Plus className={`w-5 h-5 ${inWishlist ? 'rotate-45' : ''} transition-transform`} /> {t('add_to_wishlist')}
+              </button>
+              <button 
+                onClick={() => onAddToPlaylist?.(content)}
+                className="px-10 py-4 bg-white/5 border border-white/10 text-white font-black uppercase tracking-tighter text-sm hover:bg-white/10 transition-all transform active:scale-95 flex items-center gap-3"
+              >
+                <ListPlus className="w-5 h-5" /> Playlist
               </button>
             </div>
             <div className="flex items-center gap-8">

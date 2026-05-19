@@ -4,9 +4,10 @@
  */
 
 import React from 'react';
-import { Home, Tv, Search, User, PlayCircle, Plus, Users, Clapperboard, Sparkles } from 'lucide-react';
+import { Home, Tv, Search, User, PlayCircle, Plus, Users, Clapperboard, Sparkles, Tv2 } from 'lucide-react';
 import { motion } from 'motion/react';
 import { ViewType } from '../types';
+import { useTranslation } from '../lib/i18n';
 
 interface NavigationProps {
   onSearchClick: () => void;
@@ -16,6 +17,7 @@ interface NavigationProps {
 }
 
 export default function Navigation({ onSearchClick, onImportClick, onViewChange, currentView }: NavigationProps) {
+  const { t } = useTranslation();
   return (
     <>
       {/* Dynamic Top Bar for Mobile */}
@@ -42,7 +44,7 @@ export default function Navigation({ onSearchClick, onImportClick, onViewChange,
 
       {/* Desktop Sidebar Navigation */}
       <nav className="hidden md:flex fixed left-0 top-0 bottom-0 w-24 border-r border-white/10 flex-col items-center py-10 justify-between z-[60] bg-app-black">
-        <div className="flex flex-col gap-16 items-center">
+        <div className="flex flex-col gap-12 items-center">
           <motion.div 
             initial={{ scale: 0.8, opacity: 0 }}
             animate={{ scale: 1, opacity: 1 }}
@@ -52,12 +54,12 @@ export default function Navigation({ onSearchClick, onImportClick, onViewChange,
             FLIX
           </motion.div>
           
-          <div className="flex flex-col gap-10 text-white/40">
+          <div className="flex flex-col gap-8 text-white/40">
             <NavIcon icon={<Home className="w-6 h-6" />} active={currentView === 'home'} onClick={() => onViewChange('home')} />
+            <NavIcon icon={<Tv2 className="w-6 h-6" />} active={currentView === 'hub'} onClick={() => onViewChange('hub')} />
             <NavIcon icon={<Users className="w-6 h-6" />} active={currentView === 'community'} onClick={() => onViewChange('community')} />
             <NavIcon icon={<Clapperboard className="w-6 h-6" />} active={currentView === 'social'} onClick={() => onViewChange('social')} />
             <NavIcon icon={<Sparkles className="w-6 h-6" />} active={currentView === 'judy'} onClick={() => onViewChange('judy')} />
-            <NavIcon icon={<Tv className="w-6 h-6" />} />
             <button onClick={onSearchClick} className="p-3 hover:text-brand-red transition-colors">
               <Search className="w-6 h-6" />
             </button>
@@ -67,18 +69,20 @@ export default function Navigation({ onSearchClick, onImportClick, onViewChange,
           </div>
         </div>
 
-        <div 
-          onClick={() => onViewChange('profile')}
-          className={`w-10 h-10 border rounded-full flex items-center justify-center font-bold text-xs cursor-pointer transition-all ${currentView === 'profile' ? 'bg-brand-red border-brand-red text-white' : 'bg-white/5 border-white/10 text-white/40 hover:border-white/40'}`}
-        >
-          U
+        <div className="flex flex-col gap-4 items-center">
+          <div 
+            onClick={() => onViewChange('profile')}
+            className={`w-10 h-10 border rounded-full flex items-center justify-center font-bold text-xs cursor-pointer transition-all ${currentView === 'profile' ? 'bg-brand-red border-brand-red text-white' : 'bg-white/5 border-white/10 text-white/40 hover:border-white/40'}`}
+          >
+            U
+          </div>
         </div>
       </nav>
 
       {/* Mobile Bottom Rail */}
       <nav className="md:hidden fixed bottom-8 left-1/2 -translate-x-1/2 z-50 glass-surface rounded-full p-2 flex items-center gap-1 shadow-2xl px-4 scale-90">
         <NavIcon icon={<Home className="w-5 h-5" />} active={currentView === 'home'} onClick={() => onViewChange('home')} mobile />
-        <NavIcon icon={<Users className="w-5 h-5" />} active={currentView === 'community'} onClick={() => onViewChange('community')} mobile />
+        <NavIcon icon={<Tv2 className="w-5 h-5" />} active={currentView === 'hub'} onClick={() => onViewChange('hub')} mobile />
         <NavIcon icon={<Clapperboard className="w-5 h-5" />} active={currentView === 'social'} onClick={() => onViewChange('social')} mobile />
         <button onClick={onImportClick} className="p-3 rounded-xl transition-all text-white/60 hover:text-white">
           <Plus className="w-5 h-5" />

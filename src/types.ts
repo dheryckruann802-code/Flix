@@ -22,6 +22,9 @@ export interface Movie {
   category?: string;
   isExplicit?: boolean;
   ageRating?: number;
+  isDubbed?: boolean;
+  language?: string;
+  importedBy?: string;
 }
 
 export interface Series {
@@ -43,9 +46,22 @@ export interface Series {
   category?: string;
   isExplicit?: boolean;
   ageRating?: number;
+  isDubbed?: boolean;
+  language?: string;
+  importedBy?: string;
 }
 
 export type Content = Movie | Series;
+
+export interface NewsItem {
+  id: string;
+  title: string;
+  category: 'Actor' | 'Dubbing' | 'Industry' | 'Production';
+  excerpt: string;
+  content: string;
+  imageUrl: string;
+  date: string;
+}
 
 export interface Comment {
   id: string;
@@ -92,11 +108,12 @@ export interface UserProfile {
   wishlist?: string[]; // IDs of content
   youtubeLink?: string;
   externalLinks?: { label: string; url: string }[];
+  preferredLanguage?: string;
 }
 
 export type CommunityCategory = 'All' | 'Discussion' | 'Review' | 'Theory' | 'News';
 
-export type ViewType = 'home' | 'community' | 'social' | 'profile' | 'judy';
+export type ViewType = 'home' | 'community' | 'social' | 'profile' | 'judy' | 'hub';
 
 export function getTitle(content: Content): string {
   return content.title || content.name || '';

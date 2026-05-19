@@ -10,6 +10,7 @@ import { fileURLToPath } from 'url';
 import { OAuth2Client } from 'google-auth-library';
 import cookieSession from 'cookie-session';
 import dotenv from 'dotenv';
+import { GoogleGenAI } from '@google/genai';
 
 dotenv.config();
 
@@ -18,6 +19,16 @@ const __dirname = path.dirname(__filename);
 
 const app = express();
 const PORT = 3000;
+
+// Gemini AI Setup
+const ai = new GoogleGenAI({ 
+  apiKey: process.env.GEMINI_API_KEY,
+  httpOptions: {
+    headers: {
+      'User-Agent': 'aistudio-build',
+    }
+  }
+});
 
 // Google OAuth Setup
 const CLIENT_ID = process.env.VITE_GOOGLE_CLIENT_ID;
@@ -185,6 +196,68 @@ app.get('/api/auth/me', (req, res) => {
 app.post('/api/auth/logout', (req, res) => {
   (req as any).session = null;
   res.json({ success: true });
+});
+
+// Translation Endpoint
+app.post('/api/translate', async (req, res) => {
+  const { strings, targetLanguage } = req.body;
+  
+  if (!targetLanguage || !strings) {
+    return res.status(400).json({ error: 'Missing targetLanguage or strings' });
+  }
+
+  if (targetLanguage === 'English') {
+    return res.json({ translations: strings });
+  }
+
+  const prompt = `You are Judy, the cinematic AI assistant for FLIX. 
+Translate the following UI strings from English to ${targetLanguage}.
+Context: A modern, high-end streaming and social platform for cinema lovers. 
+Style: Professional, concise, cinematic, and sleek.
+
+INPUT STRINGS (JSON):
+${JSON.stringify(strings, null, 2)}
+
+Requirement: Return ONLY a valid JSON object mirroring the input keys with translated values. Do not explain anything.`;
+
+  let attempts = 0;
+  const maxAttempts = 3;
+  let lastError = null;
+
+  while (attempts < maxAttempts) {
+    try {
+      const response = await ai.models.generateContent({
+        model: "gemini-3-flash-preview",
+        contents: [{ role: 'user', parts: [{ text: prompt }] }],
+        config: {
+          responseMimeType: "application/json"
+        }
+      });
+
+      const result = JSON.parse(response.text || '{}');
+      return res.json({ translations: result });
+    } catch (error: any) {
+      lastError = error;
+      attempts++;
+      
+      const isRetryable = error.status === 503 || error.message?.includes('high demand') || error.message?.includes('503');
+      
+      if (isRetryable && attempts < maxAttempts) {
+        const delay = Math.pow(2, attempts) * 1000;
+        console.log(`Translation API high demand. Retrying in ${delay}ms... (Attempt ${attempts}/${maxAttempts})`);
+        await new Promise(resolve => setTimeout(resolve, delay));
+        continue;
+      }
+      break;
+    }
+  }
+
+  console.error('Translation Error after all attempts:', lastError);
+  res.status(500).json({ 
+    error: 'Failed to translate', 
+    message: lastError?.message || 'Unknown error',
+    isHighDemand: lastError?.message?.includes('high demand')
+  });
 });
 
 // Vite Middleware for development

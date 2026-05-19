@@ -5,16 +5,19 @@
 
 import React, { useState } from 'react';
 import { motion, AnimatePresence } from 'motion/react';
-import { Play, Info, Star } from 'lucide-react';
+import { Play, Info, Star, Plus, ListPlus } from 'lucide-react';
 import { Content, getTitle } from '../types';
 
 interface MovieCardProps {
   content: Content;
   onClick: (content: Content) => void;
+  onAddToPlaylist?: (content: Content) => void;
+  onAddToWishlist?: (content: Content) => void;
+  inWishlist?: boolean;
   [key: string]: any;
 }
 
-export default function MovieCard({ content, onClick }: MovieCardProps) {
+export default function MovieCard({ content, onClick, onAddToPlaylist, onAddToWishlist, inWishlist }: MovieCardProps) {
   const [isHovered, setIsHovered] = useState(false);
   const title = getTitle(content);
 
@@ -69,9 +72,33 @@ export default function MovieCard({ content, onClick }: MovieCardProps) {
       </div>
 
       <div className="absolute inset-0 bg-gradient-to-t from-black via-transparent to-transparent opacity-0 group-hover:opacity-100 transition-opacity duration-300 flex flex-col justify-end p-4">
-        <div className="flex flex-col gap-1">
-          <h3 className="meta-text text-white leading-tight line-clamp-1">{title}</h3>
-          <p className="text-[9px] uppercase text-white/40 tracking-[0.2em]">New Addition • {content.mediaType}</p>
+        <div className="flex justify-between items-end gap-2">
+          <div className="flex flex-col gap-1 flex-1">
+            <h3 className="meta-text text-white leading-tight line-clamp-1">{title}</h3>
+            <p className="text-[9px] uppercase text-white/40 tracking-[0.2em]">New Addition • {content.mediaType}</p>
+          </div>
+          <div className="flex gap-1">
+            <button 
+              onClick={(e) => {
+                e.stopPropagation();
+                onAddToWishlist?.(content);
+              }}
+              className={`p-1.5 rounded-lg border transition-all ${inWishlist ? 'bg-brand-red border-brand-red text-white' : 'bg-white/10 border-white/10 text-white hover:bg-white/20'}`}
+              title="Add to Wishlist"
+            >
+              <Plus className={`w-3 h-3 ${inWishlist ? 'rotate-45' : ''} transition-transform`} />
+            </button>
+            <button 
+              onClick={(e) => {
+                e.stopPropagation();
+                onAddToPlaylist?.(content);
+              }}
+              className="p-1.5 rounded-lg bg-white/10 border border-white/10 text-white hover:bg-brand-red hover:border-brand-red transition-all"
+              title="Add to Playlist"
+            >
+              <ListPlus className="w-3 h-3" />
+            </button>
+          </div>
         </div>
       </div>
     </motion.div>
